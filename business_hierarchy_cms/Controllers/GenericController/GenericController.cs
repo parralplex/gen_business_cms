@@ -35,7 +35,7 @@ namespace business_hierarchy_cms.Controllers.GenericController
         {
             var res = service.Insert(dto);
             if (res)
-                return CreatedAtAction("DTO insert", res);
+                return StatusCode(201, "DTO insert succesfull");
             return BadRequest("Insertion failed");
         }
 
