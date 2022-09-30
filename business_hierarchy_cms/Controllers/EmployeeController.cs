@@ -10,13 +10,9 @@ namespace business_hierarchy_cms.Controllers
     [ApiController]
     public class EmployeeController : GenericController<EmployeeDTO>
     {
+        
         public EmployeeController(ICRUDService<EmployeeDTO> service) : base(service)
         {
-        }
-
-        protected override int GetDTOID(EmployeeDTO dto)
-        {
-            return dto.EmployeeId;
         }
     }
 }

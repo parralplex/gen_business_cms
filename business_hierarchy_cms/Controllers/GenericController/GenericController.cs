@@ -14,57 +14,68 @@ namespace business_hierarchy_cms.Controllers.GenericController
             service = pservice;
         }
 
-        [Route("all")]
-        [HttpGet]
-        public IEnumerable<DTO> GetAll()
-        {
-            return service.GetAll();
-        }
-
-        [HttpGet]
-        public ActionResult<DTO> Get(int id)
-        {
-            var dto = service.FindByID(id);
-            if (dto == null)
-                return NotFound();
-            return dto;
-        }
-
         [HttpPost]
         public ActionResult Insert(DTO dto)
         {
-            var res = service.Insert(dto);
-            if (res)
+            try
+            {
+                service.Insert(dto);
                 return StatusCode(201, "DTO insert succesfull");
-            return BadRequest("Insertion failed");
+            }
+            catch (System.Web.Http.HttpResponseException exp)
+            {
+                switch (exp.Response.StatusCode)
+                {
+                    case System.Net.HttpStatusCode.NotFound:
+                        return NotFound();
+                    case System.Net.HttpStatusCode.InternalServerError:
+                        return StatusCode(500, exp.Response.ReasonPhrase);
+                }
+            }
+            return StatusCode(500, "Unknown server error");
+
         }
 
         [HttpPut]
         public ActionResult Update(DTO dto)
         {
-            var entity = service.FindByID(GetDTOID(dto));
-            if (entity == null)
-                return NotFound();
-
-            var res = service.Update(entity);
-            if (res)
+            try
+            {
+                service.Update(dto);
                 return Ok();
-            return StatusCode(500);
+            }
+            catch (System.Web.Http.HttpResponseException exp)
+            {
+                switch (exp.Response.StatusCode)
+                {
+                    case System.Net.HttpStatusCode.NotFound:
+                        return NotFound();
+                    case System.Net.HttpStatusCode.InternalServerError:
+                        return StatusCode(500, exp.Response.ReasonPhrase);
+                }
+            }
+            return StatusCode(500, "Unknown server error");
         }
 
         [HttpDelete]
         public ActionResult Delete(DTO dto)
         {
-            var entity = service.FindByID(GetDTOID(dto));
-            if (entity == null)
-                return NotFound();
-
-            var res = service.Remove(entity);
-            if (res)
+            try
+            {
+                service.Remove(dto);
                 return Ok();
-            return StatusCode(500);
+            }
+            catch (System.Web.Http.HttpResponseException exp)
+            {
+                switch (exp.Response.StatusCode)
+                {
+                    case System.Net.HttpStatusCode.NotFound:
+                        return NotFound();
+                    case System.Net.HttpStatusCode.InternalServerError:
+                        return StatusCode(500, exp.Response.ReasonPhrase);
+                }
+            }
+            return StatusCode(500, "Unknown server error");
         }
-
-        protected abstract int GetDTOID(DTO dto);
     }
 }

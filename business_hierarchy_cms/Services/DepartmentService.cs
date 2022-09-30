@@ -1,99 +1,44 @@
 ﻿using business_hierarchy_cms.Services.Abstract;
 using DomainModel.DTO;
-using DomainModel.Extensions;
+using DomainModel.DTO.Abstract;
 using DomainModel.Model;
 using Infrastructure.UnitOfWork;
 
 namespace business_hierarchy_cms.Services
 {
-    public class DepartmentService : ICRUDService<DepartmentDTO>
+    public class DepartmentService : GenericService<Department, DepartmentDTO>
     {
         private UnitOfWorkManager workManager;
-        public DepartmentService(IUnitOfWork pWorkManager)
+        public DepartmentService(IUnitOfWork pWorkManager) : base(pWorkManager, ((UnitOfWorkManager)pWorkManager).DepartmentRepository)
         {
             workManager = (UnitOfWorkManager)pWorkManager;
         }
-        public DepartmentDTO? FindByID(int id)
+
+        protected override Department? FindByID(DepartmentDTO dto)
         {
-            var departmentList = workManager.DepartmentRepository.Find(e => e.DepartmentId == id).ToList();
+            var departmentList = workManager.DepartmentRepository.Find(e => e.DepartmentId == dto.DepartmentId).ToList();
             if (departmentList.Count > 0)
             {
-                return departmentList[0].ToBaseDTO();
+                return departmentList[0];
             }
             return null;
-        }
-        public IEnumerable<DepartmentDTO> GetAll()
-        {
-            var departments = new HashSet<DepartmentDTO>();
-            foreach (var department in workManager.DepartmentRepository.GetAll())
-            {
-                departments.Add(department.ToBaseDTO());
-            }
-            return departments;
-        }
-
-        public bool Insert(DepartmentDTO entity)
-        {
-            try
-            {
-                workManager.DepartmentRepository.Insert(entity.ToBaseEntity());
-                workManager.SaveChanges();
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-        }
-
-        public bool Remove(DepartmentDTO entity)
-        {
-            var department = workManager.DepartmentRepository.Find(e => e.DepartmentId == entity.DepartmentId).ToList()[0];
-            try
-            {
-                workManager.DepartmentRepository.Remove(department);
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-        }
-
-        public bool Update(DepartmentDTO entity)
-        {
-            var department = workManager.DepartmentRepository.Find(e => e.DepartmentId == entity.DepartmentId).ToList()[0];
-            department.DepartmentId = entity.DepartmentId;
-            department.DivisionId = entity.DivisionId;
-            department.Name = entity.Name;
-            department.Objective = entity.Objective;
-            try
-            {
-                workManager.DepartmentRepository.Update(department);
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
         }
 
         public bool MakeChief(int departmentId, int employeeId)
         {
-            var department = workManager.DepartmentRepository.Find(e => e.DepartmentId == departmentId).ToList()[0];
-            var empEntity = FindByID(employeeId);
-            if (empEntity == null)
+            var department = FindByID(new DepartmentDTO() { DepartmentId = departmentId });
+            if (department == null)
             {
                 return false;
             }
-            var employee = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList()[0];
+
+
+            var employeeList = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList();
+            if (employeeList.Count == 0)
+            {
+                return false;
+            }
+            var employee = employeeList[0];
 
             if (department.Division.Business.BusinessId != employee.BusinessId)
             {

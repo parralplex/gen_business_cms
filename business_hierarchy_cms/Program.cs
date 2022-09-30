@@ -3,10 +3,8 @@ using business_hierarchy_cms.Services.Abstract;
 using DomainModel.DTO;
 using DomainModel.Model.Context;
 using Infrastructure;
-using Infrastructure.Repository;
 using Infrastructure.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 var builder = WebApplication.CreateBuilder(args);
 

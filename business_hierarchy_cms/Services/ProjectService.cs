@@ -1,103 +1,43 @@
 ﻿using business_hierarchy_cms.Services.Abstract;
 using DomainModel.DTO;
-using DomainModel.Extensions;
 using DomainModel.Model;
 using Infrastructure.UnitOfWork;
 
 namespace business_hierarchy_cms.Services
 {
-    public class ProjectService : ICRUDService<ProjectDTO>
+    public class ProjectService : GenericService<Project, ProjectDTO>
     {
         private UnitOfWorkManager workManager;
-        public ProjectService(IUnitOfWork pWorkManager)
+        public ProjectService(IUnitOfWork pWorkManager) : base(pWorkManager, ((UnitOfWorkManager)pWorkManager).ProjectRepository)
         {
             workManager = (UnitOfWorkManager)pWorkManager;
         }
-        public ProjectDTO? FindByID(int id)
+
+        protected override Project? FindByID(ProjectDTO dto)
         {
-            var projectList = workManager.ProjectRepository.Find(e => e.ProjectId == id).ToList();
+            var projectList = workManager.ProjectRepository.Find(e => e.ProjectId == dto.ProjectId).ToList();
             if (projectList.Count > 0)
             {
-                return projectList[0].ToBaseDTO();
+                return projectList[0];
             }
             return null;
         }
 
-        public IEnumerable<ProjectDTO> GetAll()
-        {
-            var projects = new HashSet<ProjectDTO>();
-            foreach (var project in workManager.ProjectRepository.GetAll())
-            {
-                projects.Add(project.ToBaseDTO());
-            }
-            return projects;
-        }
-
-        public bool Insert(ProjectDTO entity)
-        {
-            try
-            {
-                workManager.ProjectRepository.Insert(entity.ToBaseEntity());
-                workManager.SaveChanges();
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-        }
-
-        public bool Remove(ProjectDTO entity)
-        {
-            var project = workManager.ProjectRepository.Find(e => e.ProjectId == entity.ProjectId).ToList()[0];
-            try
-            {
-                workManager.ProjectRepository.Remove(project);
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-        }
-
-        public bool Update(ProjectDTO entity)
-        {
-            var project = workManager.ProjectRepository.Find(e => e.ProjectId == entity.ProjectId).ToList()[0];
-            project.ProjectId = entity.ProjectId;
-            project.DepartmentId = entity.DepartmentId;
-            project.Name = entity.Name;
-            project.ProductName = entity.ProductName;
-            project.Description = entity.Description;
-            project.StartsAt = entity.StartsAt;
-            project.FinishesAt = entity.FinishesAt;
-            try
-            {
-                workManager.ProjectRepository.Update(project);
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-        }
-
         public bool MakeProjectManager(int projectId, int employeeId)
         {
-            var project = workManager.ProjectRepository.Find(e => e.ProjectId == projectId).ToList()[0];
-            var empEntity = FindByID(employeeId);
-            if (empEntity == null)
+            var project = FindByID(new ProjectDTO() { ProjectId = projectId });
+            if (project == null)
             {
                 return false;
             }
-            var employee = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList()[0];
+
+
+            var employeeList = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList();
+            if (employeeList.Count == 0)
+            {
+                return false;
+            }
+            var employee = employeeList[0];
 
             if (project.Department.Division.Business.BusinessId != employee.BusinessId)
             {

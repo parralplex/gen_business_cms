@@ -14,20 +14,11 @@ namespace business_hierarchy_cms.Controllers
         {
         }
 
-        protected override int GetDTOID(ProjectDTO dto)
-        {
-            return dto.ProjectId;
-        }
-
         [Route("projectManager")]
         [HttpPost]
         public ActionResult MakeProjectManager(ProjectDTO dto, int employeeId)
         {
-            var businessEntity = ((ProjectService)service).FindByID(GetDTOID(dto));
-            if (businessEntity == null)
-                return NotFound();
-
-            var res = ((ProjectService)service).MakeProjectManager(businessEntity.ProjectId, employeeId);
+            var res = ((ProjectService)service).MakeProjectManager(dto.ProjectId, employeeId);
             if (res)
                 return Ok();
             return StatusCode(500);
@@ -37,11 +28,7 @@ namespace business_hierarchy_cms.Controllers
         [HttpDelete]
         public ActionResult DeleteProjectManager(ProjectDTO dto)
         {
-            var entity = service.FindByID(GetDTOID(dto));
-            if (entity == null)
-                return NotFound();
-
-            var res = ((ProjectService)service).RemoveProjectManager(entity.ProjectId);
+            var res = ((ProjectService)service).RemoveProjectManager(dto.ProjectId);
             if (res)
                 return Ok();
             return StatusCode(500);

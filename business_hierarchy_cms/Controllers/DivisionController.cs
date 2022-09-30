@@ -15,20 +15,11 @@ namespace business_hierarchy_cms.Controllers
         {
         }
 
-        protected override int GetDTOID(DivisionDTO dto)
-        {
-            return dto.DivisionId;
-        }
-
         [Route("director")]
         [HttpPost]
         public ActionResult MakeDirector(DivisionDTO dto, int employeeId)
         {
-            var businessEntity = ((DivisionService)service).FindByID(GetDTOID(dto));
-            if (businessEntity == null)
-                return NotFound();
-
-            var res = ((DivisionService)service).MakeDirector(businessEntity.DivisionId, employeeId);
+            var res = ((DivisionService)service).MakeDirector(dto.DivisionId, employeeId);
             if (res)
                 return Ok();
             return StatusCode(500);
@@ -38,11 +29,7 @@ namespace business_hierarchy_cms.Controllers
         [HttpDelete]
         public ActionResult DeleteDirector(DivisionDTO dto)
         {
-            var entity = service.FindByID(GetDTOID(dto));
-            if (entity == null)
-                return NotFound();
-
-            var res = ((DivisionService)service).RemoveDirector(entity.DivisionId);
+            var res = ((DivisionService)service).RemoveDirector(dto.DivisionId);
             if (res)
                 return Ok();
             return StatusCode(500);

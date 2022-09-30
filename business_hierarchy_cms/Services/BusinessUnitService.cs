@@ -1,106 +1,55 @@
 ﻿using business_hierarchy_cms.Services.Abstract;
 using DomainModel.DTO;
-using DomainModel.Extensions;
 using DomainModel.Model;
 using Infrastructure.UnitOfWork;
 
 namespace business_hierarchy_cms.Services
 {
-    public class BusinessUnitService : ICRUDService<BusinessDTO> 
+    public class BusinessUnitService : GenericService<Business, BusinessDTO>
     {
         private UnitOfWorkManager workManager;
-        public BusinessUnitService(IUnitOfWork pWorkManager)
+        public BusinessUnitService(IUnitOfWork pWorkManager):base(pWorkManager, ((UnitOfWorkManager)pWorkManager).BusinessRepository)
         {
             workManager = (UnitOfWorkManager)pWorkManager;
         }
-        public bool Insert(BusinessDTO entity)
-        {
-            try
-            {
-                workManager.BusinessRepository.Insert(entity.ToBaseEntity());
-                workManager.SaveChanges();
-                return true;
-            }
-            catch (Exception)
-            {
 
-                return false;
-            }
-
-        }
-
-        public bool Remove(BusinessDTO entity)
+        public override void Remove(BusinessDTO entity)
         {
             var business = workManager.BusinessRepository.Find(e => e.BusinessId == entity.BusinessID).ToList()[0];
-            try
+            foreach (var Employee in business.Employees)
             {
-                foreach (var Employee in business.Employees)
-                {
-                    workManager.EmployeeRepository.Remove(Employee);
-                }
-                workManager.BusinessRepository.Remove(business);
-                workManager.SaveChanges();
-
-                return true;
+                workManager.EmployeeRepository.Remove(Employee);
             }
-            catch (Exception)
-            {
-
-                return false;
-            }
-        }
-        public bool Update(BusinessDTO entity)
-        {
-            var business = workManager.BusinessRepository.Find(e => e.BusinessId == entity.BusinessID).ToList()[0];
-            business.BusinessId = entity.BusinessID;
-            business.Description = entity.Description;
-            business.Name = entity.Name;
-            try
-            {
-                workManager.BusinessRepository.Update(business);
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
+            base.Remove(entity);
         }
 
-        public BusinessDTO? FindByID(int id)
+        protected override Business? FindByID(BusinessDTO dto)
         {
-            var businessList = workManager.BusinessRepository.Find(e => e.BusinessId == id).ToList();
+            var businessList = workManager.BusinessRepository.Find(e => e.BusinessId == dto.BusinessID).ToList();
             if (businessList.Count > 0)
             {
-                return businessList[0].ToBaseDTO();
+                return businessList[0];
             }
             return null;
         }
 
-        public IEnumerable<BusinessDTO> GetAll()
-        {
-            var businesses = new HashSet<BusinessDTO>();
-            foreach (var business in workManager.BusinessRepository.GetAll())
-            {
-                businesses.Add(business.ToBaseDTO());
-            }
-            return businesses;
-        }
-
         public bool MakeCeo(int businessId, int employeeId)
         {
-            var business = workManager.BusinessRepository.Find(e => e.BusinessId == businessId).ToList()[0];
-
-            var empEntity = FindByID(employeeId);
-            if(empEntity == null)
+            var business = FindByID(new BusinessDTO() { BusinessID = businessId });
+            if (business == null)
             {
                 return false;
             }
-            var employee = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList()[0];
 
-            if(business.BusinessId != employee.BusinessId)
+
+            var employeeList = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList();
+            if (employeeList.Count == 0)
+            {
+                return false;
+            }
+            var employee = employeeList[0];
+
+            if (business.BusinessId != employee.BusinessId)
             {
                 return false;
             }

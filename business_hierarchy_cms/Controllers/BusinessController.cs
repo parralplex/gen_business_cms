@@ -19,33 +19,16 @@ namespace business_hierarchy_cms.Controllers
         [HttpPost]
         public ActionResult MakeCeo(BusinessDTO dto, int employeeId)
         {
-            var businessEntity = ((BusinessUnitService)service).FindByID(GetDTOID(dto));
-            if (businessEntity == null)
-                return NotFound();
-
-            var res = ((BusinessUnitService)service).MakeCeo(businessEntity.BusinessID, employeeId);
-            if (res)
-                return Ok();
-            return StatusCode(500);
+            ((BusinessUnitService)service).MakeCeo(dto.BusinessID, employeeId);
+            return Ok();
         }
 
         [Route("ceo")]
         [HttpDelete]
         public ActionResult DeleteCeo(BusinessDTO dto)
         {
-            var entity = ((BusinessUnitService)service).FindByID(GetDTOID(dto));
-            if (entity == null)
-                return NotFound();
-
-            var res = ((BusinessUnitService)service).RemoveCeo(entity.BusinessID);
-            if (res)
-                return Ok();
-            return StatusCode(500);
-        }
-
-        protected override int GetDTOID(BusinessDTO dto)
-        {
-            return dto.BusinessID;
+            ((BusinessUnitService)service).RemoveCeo(dto.BusinessID);
+            return Ok();
         }
     }
 }
