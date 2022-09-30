@@ -14,5 +14,21 @@ namespace business_hierarchy_cms.Controllers
         public EmployeeController(ICRUDService<EmployeeDTO> service) : base(service)
         {
         }
+
+        [Route("project")]
+        [HttpPost]
+        public ActionResult AssignEmployeeAProject(int projectId, int employeeId)
+        {
+            ((EmployeeService)service).AssignProject(projectId, employeeId);
+            return Ok();
+        }
+
+        [Route("project")]
+        [HttpDelete]
+        public ActionResult RemoveEmployeeFromProject(int projectId, int employeeId)
+        {
+            ((EmployeeService)service).RemoveFromProject(projectId, employeeId);
+            return Ok();
+        }
     }
 }
