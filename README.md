@@ -4,5 +4,5 @@
                 
                 2.) Copy your database connection-string to `business_hierarchy_smc/appsettings.json`
                 
-                3.) Run web api project and test its endpoints with swagger or other utilities
+                3.) Run web api project and test its endpoints with swagger (for CMS) and ChilliCream Graphql (for queries)
                 
