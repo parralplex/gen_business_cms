@@ -1,12 +1,14 @@
-﻿using business_hierarchy_cms.Services.Abstract;
+﻿using business_hierarchy_cms.Exceptions;
+using business_hierarchy_cms.Services.Abstract;
 using DomainModel.DTO;
 using DomainModel.DTO.Abstract;
 using DomainModel.Model;
 using Infrastructure.UnitOfWork;
+using System.Net;
 
 namespace business_hierarchy_cms.Services
 {
-    public class DepartmentService : GenericService<Department, DepartmentDTO>
+    public class DepartmentService : GenericOrganisationalUnitService<Department, DepartmentDTO>
     {
         private UnitOfWorkManager workManager;
         public DepartmentService(IUnitOfWork pWorkManager) : base(pWorkManager, ((UnitOfWorkManager)pWorkManager).DepartmentRepository)
@@ -24,80 +26,43 @@ namespace business_hierarchy_cms.Services
             return null;
         }
 
-        public bool MakeChief(int departmentId, int employeeId)
+        protected override void AssignPosition(int organisationUnitId, int employeeId)
         {
-            var department = FindByID(new DepartmentDTO() { DepartmentId = departmentId });
-            if (department == null)
-            {
-                return false;
-            }
-
-
-            var employeeList = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList();
-            if (employeeList.Count == 0)
-            {
-                return false;
-            }
-            var employee = employeeList[0];
-
-            if (department.Division.Business.BusinessId != employee.BusinessId)
-            {
-                return false;
-            }
-
-            if (department.DepartmentChief != null) 
-            {
-                workManager.DepartmentChiefRepository.Remove(department.DepartmentChief);
-            }
-
-            if (employee.Ceo != null)
-            {
-                workManager.CeoRepository.Remove(employee.Ceo);
-            }
-            if (employee.ProjectManager != null)
-            {
-                workManager.ProjectManagerRepository.Remove(employee.ProjectManager);
-            }
-            if (employee.Director != null)
-            {
-                workManager.DirectorRepository.Remove(employee.Director);
-            }
-
-            try
-            {
-                workManager.DepartmentChiefRepository.Insert(new DepartmentChief() { DepartmentId = departmentId, EmployeeId = employeeId });
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-
+            workManager.DepartmentChiefRepository.Insert(new DepartmentChief() { DepartmentId = organisationUnitId, EmployeeId = employeeId });
         }
 
-        public bool RemoveChief(int departmentId)
+        protected override void CheckEmployeeContract(int organisationUnitId, int employeeBusinessId)
         {
-            var department = workManager.DepartmentRepository.Find(e => e.DepartmentId == departmentId).ToList()[0];
-            if (department.DepartmentChief == null)
+            var department = FindByID(new DepartmentDTO() { DepartmentId = organisationUnitId });
+            if (department == null)
             {
-                return false;
+                HttpExceptions.ThrowHttpResponseExp(HttpStatusCode.NotFound, " Department with this ID doesnt exists in database");
             }
 
-            try
+            if (department.Division.BusinessId != employeeBusinessId)
+            {
+                HttpExceptions.ThrowHttpResponseExp(HttpStatusCode.BadRequest, " This employee is not part the business");
+            }
+
+            if (department.DepartmentChief != null)
             {
                 workManager.DepartmentChiefRepository.Remove(department.DepartmentChief);
-                workManager.SaveChanges();
-
-                return true;
             }
-            catch (Exception)
+        }
+
+        protected override object? GetCurrentLeader(int organisationUnitId)
+        {
+            var departmentList = workManager.DepartmentRepository.Find(e => e.DepartmentId == organisationUnitId).ToList();
+            if (departmentList.Count > 0)
             {
-
-                return false;
+                return departmentList[0].DepartmentChief;
             }
+            return null;
+        }
+
+        protected override void RemoveLeader(object leader)
+        {
+            workManager.DepartmentChiefRepository.Remove((DepartmentChief)leader);
         }
     }
 }

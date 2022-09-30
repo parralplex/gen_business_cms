@@ -19,20 +19,16 @@ namespace business_hierarchy_cms.Controllers
         [HttpPost]
         public ActionResult MakeChief(DepartmentDTO dto, int employeeId)
         {
-            var res = ((DepartmentService)service).MakeChief(dto.DepartmentId, employeeId);
-            if (res)
-                return Ok();
-            return StatusCode(500);
+            ((DepartmentService)service).MakeLeaderOfThisUnit(dto.DepartmentId, employeeId);
+            return Ok();
         }
 
         [Route("chief")]
         [HttpDelete]
         public ActionResult DeleteChief(DepartmentDTO dto)
         {
-            var res = ((DepartmentService)service).RemoveChief(dto.DepartmentId);
-            if (res)
-                return Ok();
-            return StatusCode(500);
+            ((DepartmentService)service).RemoveLeaderOfThisUnit(dto.DepartmentId);
+            return Ok();
         }
     }
 }

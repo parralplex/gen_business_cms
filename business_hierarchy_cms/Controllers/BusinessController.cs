@@ -19,7 +19,7 @@ namespace business_hierarchy_cms.Controllers
         [HttpPost]
         public ActionResult MakeCeo(BusinessDTO dto, int employeeId)
         {
-            ((BusinessUnitService)service).MakeCeo(dto.BusinessID, employeeId);
+            ((BusinessUnitService)service).MakeLeaderOfThisUnit(dto.BusinessID, employeeId);
             return Ok();
         }
 
@@ -27,7 +27,7 @@ namespace business_hierarchy_cms.Controllers
         [HttpDelete]
         public ActionResult DeleteCeo(BusinessDTO dto)
         {
-            ((BusinessUnitService)service).RemoveCeo(dto.BusinessID);
+            ((BusinessUnitService)service).RemoveLeaderOfThisUnit(dto.BusinessID);
             return Ok();
         }
     }

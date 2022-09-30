@@ -1,11 +1,13 @@
-﻿using business_hierarchy_cms.Services.Abstract;
+﻿using business_hierarchy_cms.Exceptions;
+using business_hierarchy_cms.Services.Abstract;
 using DomainModel.DTO;
 using DomainModel.Model;
 using Infrastructure.UnitOfWork;
+using System.Net;
 
 namespace business_hierarchy_cms.Services
 {
-    public class DivisionService : GenericService<Division, DivisionDTO>
+    public class DivisionService : GenericOrganisationalUnitService<Division, DivisionDTO>
     {
         private UnitOfWorkManager workManager;
         public DivisionService(IUnitOfWork pWorkManager) : base(pWorkManager, ((UnitOfWorkManager)pWorkManager).DivisionRepository)
@@ -22,80 +24,43 @@ namespace business_hierarchy_cms.Services
             return null;
         }
 
-        public bool MakeDirector(int divisionId, int employeeId)
+        protected override void AssignPosition(int organisationUnitId, int employeeId)
         {
-            var division = FindByID(new DivisionDTO() { DivisionId = divisionId });
+            workManager.DirectorRepository.Insert(new Director() { DivisionId = organisationUnitId, EmployeeId = employeeId });
+        }
+
+        protected override void CheckEmployeeContract(int organisationUnitId, int employeeBusinessId)
+        {
+            var division = FindByID(new DivisionDTO() { DivisionId = organisationUnitId });
             if (division == null)
             {
-                return false;
+                HttpExceptions.ThrowHttpResponseExp(HttpStatusCode.NotFound, " Division with this ID doesnt exists in database");
             }
 
-
-            var employeeList = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList();
-            if (employeeList.Count == 0)
+            if (division.BusinessId != employeeBusinessId)
             {
-                return false;
-            }
-            var employee = employeeList[0];
-
-            if (division.Business.BusinessId != employee.BusinessId)
-            {
-                return false;
+                HttpExceptions.ThrowHttpResponseExp(HttpStatusCode.BadRequest, " This employee is not part the business");
             }
 
             if (division.Director != null)
             {
                 workManager.DirectorRepository.Remove(division.Director);
             }
-
-            if (employee.Ceo != null)
-            {
-                workManager.CeoRepository.Remove(employee.Ceo);
-            }
-            if (employee.ProjectManager != null)
-            {
-                workManager.ProjectManagerRepository.Remove(employee.ProjectManager);
-            }
-            if (employee.DepartmentChief != null)
-            {
-                workManager.DepartmentChiefRepository.Remove(employee.DepartmentChief);
-            }
-
-            try
-            {
-                workManager.DirectorRepository.Insert(new Director() { DivisionId = divisionId, EmployeeId = employeeId });
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-
         }
 
-        public bool RemoveDirector(int divisionId)
+        protected override object? GetCurrentLeader(int organisationUnitId)
         {
-            var division = workManager.DivisionRepository.Find(e => e.DivisionId == divisionId).ToList()[0];
-            if (division.Director == null)
+            var divisionList = workManager.DivisionRepository.Find(e => e.DivisionId == organisationUnitId).ToList();
+            if (divisionList.Count > 0)
             {
-                return false;
+                return divisionList[0].Director;
             }
+            return null;
+        }
 
-            try
-            {
-                workManager.DirectorRepository.Remove(division.Director);
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
+        protected override void RemoveLeader(object leader)
+        {
+            workManager.DirectorRepository.Remove((Director)leader);
         }
     }
 }

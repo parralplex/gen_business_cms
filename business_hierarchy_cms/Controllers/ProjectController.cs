@@ -18,20 +18,16 @@ namespace business_hierarchy_cms.Controllers
         [HttpPost]
         public ActionResult MakeProjectManager(ProjectDTO dto, int employeeId)
         {
-            var res = ((ProjectService)service).MakeProjectManager(dto.ProjectId, employeeId);
-            if (res)
-                return Ok();
-            return StatusCode(500);
+            ((ProjectService)service).MakeLeaderOfThisUnit(dto.ProjectId, employeeId);
+            return Ok();
         }
 
         [Route("projectManager")]
         [HttpDelete]
         public ActionResult DeleteProjectManager(ProjectDTO dto)
         {
-            var res = ((ProjectService)service).RemoveProjectManager(dto.ProjectId);
-            if (res)
-                return Ok();
-            return StatusCode(500);
+            ((ProjectService)service).RemoveLeaderOfThisUnit(dto.ProjectId);
+            return Ok();
         }
     }
 }

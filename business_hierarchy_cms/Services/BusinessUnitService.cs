@@ -1,11 +1,13 @@
-﻿using business_hierarchy_cms.Services.Abstract;
+﻿using business_hierarchy_cms.Exceptions;
+using business_hierarchy_cms.Services.Abstract;
 using DomainModel.DTO;
 using DomainModel.Model;
 using Infrastructure.UnitOfWork;
+using System.Net;
 
 namespace business_hierarchy_cms.Services
 {
-    public class BusinessUnitService : GenericService<Business, BusinessDTO>
+    public class BusinessUnitService : GenericOrganisationalUnitService<Business, BusinessDTO>
     {
         private UnitOfWorkManager workManager;
         public BusinessUnitService(IUnitOfWork pWorkManager):base(pWorkManager, ((UnitOfWorkManager)pWorkManager).BusinessRepository)
@@ -33,80 +35,43 @@ namespace business_hierarchy_cms.Services
             return null;
         }
 
-        public bool MakeCeo(int businessId, int employeeId)
+        protected override void AssignPosition(int organisationUnitId, int employeeId)
         {
-            var business = FindByID(new BusinessDTO() { BusinessID = businessId });
+            workManager.CeoRepository.Insert(new Ceo() { BusinessId = organisationUnitId, EmployeeId = employeeId });
+        }
+
+        protected override void CheckEmployeeContract(int organisationUnitId, int employeeBusinessId)
+        {
+            var business = FindByID(new BusinessDTO() { BusinessID = organisationUnitId });
             if (business == null)
             {
-                return false;
+                HttpExceptions.ThrowHttpResponseExp(HttpStatusCode.NotFound, " Business with this ID doesnt exists in database");
             }
 
-
-            var employeeList = workManager.EmployeeRepository.Find(e => e.EmployeeId == employeeId).ToList();
-            if (employeeList.Count == 0)
+            if (business.BusinessId != employeeBusinessId)
             {
-                return false;
-            }
-            var employee = employeeList[0];
-
-            if (business.BusinessId != employee.BusinessId)
-            {
-                return false;
+                HttpExceptions.ThrowHttpResponseExp(HttpStatusCode.BadRequest, " This employee is not part the business");
             }
 
             if (business.Ceo != null)
             {
                 workManager.CeoRepository.Remove(business.Ceo);
             }
-
-            if (employee.DepartmentChief != null) 
-            {
-                workManager.DepartmentChiefRepository.Remove(employee.DepartmentChief);
-            }
-            if (employee.ProjectManager != null)
-            {
-                workManager.ProjectManagerRepository.Remove(employee.ProjectManager);
-            }
-            if (employee.Director != null)
-            {
-                workManager.DirectorRepository.Remove(employee.Director);
-            }
-
-            try
-            {
-                workManager.CeoRepository.Insert(new Ceo() { BusinessId = businessId, EmployeeId = employeeId});
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-
         }
 
-        public bool RemoveCeo(int businessId)
+        protected override object? GetCurrentLeader(int organisationUnitId)
         {
-            var business = workManager.BusinessRepository.Find(e => e.BusinessId == businessId).ToList()[0];
-            if (business.Ceo == null)
+            var businessList = workManager.BusinessRepository.Find(e => e.BusinessId == organisationUnitId).ToList();
+            if (businessList.Count > 0)
             {
-                return false;
+                return businessList[0].Ceo;
             }
+            return null;
+        }
 
-            try
-            {
-                workManager.CeoRepository.Remove(business.Ceo);
-                workManager.SaveChanges();
-
-                return true;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
+        protected override void RemoveLeader(object leader)
+        {
+            workManager.CeoRepository.Remove((Ceo)leader);
         }
     }
 }
